@@ -1,3 +1,5 @@
+-- Everything in this file is identical to Gift.hs except the actual validator
+-- logic on line 38.
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE NoImplicitPrelude   #-}
