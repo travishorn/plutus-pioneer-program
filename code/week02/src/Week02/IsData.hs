@@ -30,17 +30,29 @@ import           Playground.Types     (KnownCurrency (..))
 import           Prelude              (IO, Semigroup (..), String)
 import           Text.Printf          (printf)
 
+-- Create a new type that just wraps an Integer
 newtype MySillyRedeemer = MySillyRedeemer Integer
 
+-- We could write an instance for IsData for MySillerRedeemer. It would be
+-- relatively straightforward in this case because we could just copy the
+-- Integer instance.
+
+-- But we don't have to. We can use this template Haskell instead. It takes a
+-- type and then at compile time it writes the instance for us and inserts it
+-- here. It turns custom datatypes into instances of IsData.
 PlutusTx.unstableMakeIsData ''MySillyRedeemer
 
 {-# INLINABLE mkValidator #-}
+
+-- Replace the Integer here with the newly created type
 mkValidator :: () -> MySillyRedeemer -> ScriptContext -> Bool
 mkValidator _ (MySillyRedeemer r) _ = traceIfFalse "wrong redeemer" $ r == 42
 
 data Typed
 instance Scripts.ValidatorTypes Typed where
     type instance DatumType Typed = ()
+
+    -- Replace integer with new type here, too
     type instance RedeemerType Typed = MySillyRedeemer
 
 typedValidator :: Scripts.TypedValidator Typed
@@ -48,6 +60,7 @@ typedValidator = Scripts.mkTypedValidator @Typed
     $$(PlutusTx.compile [|| mkValidator ||])
     $$(PlutusTx.compile [|| wrap ||])
   where
+    -- Last place to replace Integer with new type
     wrap = Scripts.wrapValidator @() @MySillyRedeemer
 
 validator :: Validator
