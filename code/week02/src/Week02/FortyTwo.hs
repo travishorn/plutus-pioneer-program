@@ -1,3 +1,5 @@
+-- Mostly identical to Gift.hs. The big change is the validator on lines 39-45.
+
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE NoImplicitPrelude   #-}
@@ -33,9 +35,14 @@ import           Text.Printf         (printf)
 
 {-# INLINABLE mkValidator #-}
 mkValidator :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+
+-- Ignore the first and last arguments (datum and context). All we care about is
+-- the middle argument, the redeemer.
 mkValidator _ r _
+    -- Should pass if redeemer is the integer 42
     | r == Builtins.mkI 42 = ()
-    | otherwise            = traceError "wrong redeemer!"
+    -- Otherwise, redeemer is not 42 and an error is returned
+    | otherwise = traceError "Wrong redeemer"
 
 validator :: Validator
 validator = mkValidatorScript $$(PlutusTx.compile [|| mkValidator ||])

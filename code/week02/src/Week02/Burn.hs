@@ -1,5 +1,5 @@
 -- Everything in this file is identical to Gift.hs except the actual validator
--- logic on line 38.
+-- logic on lines 39-44.
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE NoImplicitPrelude   #-}
@@ -35,6 +35,12 @@ import           Text.Printf         (printf)
 
 {-# INLINABLE mkValidator #-}
 mkValidator :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+
+-- Instead of always passing like in Gift.hs, always return an error.
+--mkValidator _ _ _ = error ()
+
+-- The error function above isn't very verbose. Use `traceError` to log more
+-- helpful info when the error happens
 mkValidator _ _ _ = traceError "BURNT!"
 
 validator :: Validator
