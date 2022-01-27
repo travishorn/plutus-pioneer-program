@@ -35,6 +35,7 @@ import           Playground.Types     (KnownCurrency (..))
 import           Prelude              (IO, Semigroup (..), Show (..), String)
 import           Text.Printf          (printf)
 
+-- Datum should contain the beneficiary and the deadline.
 data VestingDatum = VestingDatum
     { beneficiary :: PaymentPubKeyHash
     , deadline    :: POSIXTime
@@ -42,17 +43,40 @@ data VestingDatum = VestingDatum
 
 PlutusTx.unstableMakeIsData ''VestingDatum
 
+-- Again, the validator takes datum, redeemer, and context. It returns a Bool.
+-- Datum is the custom type we defined above. For the redeemer, the beneficiary
+-- doesn't need to provide any additional information. So redeemer is simply
+-- unit `()` in this case.
 {-# INLINABLE mkValidator #-}
 mkValidator :: VestingDatum -> () -> ScriptContext -> Bool
+
+-- Giving the datum, redeemer, and context names `dat`, `()`, and `ctx`
+-- Only return True if signedByBeneficiary && deadlineReached. Both of those
+-- functions are defined in the `where` section below. If either fail,
+-- `traceIfFalse` will provide a trace with a friendly error message
 mkValidator dat () ctx = traceIfFalse "beneficiary's signature missing" signedByBeneficiary &&
                          traceIfFalse "deadline not reached" deadlineReached
   where
+    -- `info` contains the TxInfo field of the script context. It makes sense to
+    -- assign this to its own variable sense we use it more than once below
     info :: TxInfo
     info = scriptContextTxInfo ctx
 
+    -- Returns true if signed by the beneficiary. Otherwise false.
+    -- `txSignedBy` takes the TxInfo of the context and a public key hash. We
+    -- get the public key hash for the beneficiary by calling
+    -- `unPaymentPubKeyHash` on the `beneficiary` field of the datum
     signedByBeneficiary :: Bool
     signedByBeneficiary = txSignedBy info $ unPaymentPubKeyHash $ beneficiary dat
 
+    -- The deadline interval should be any time FROM the deadline all the way TO
+    -- infinity. We can describe that with `(from $ deadline dat)`
+
+    -- The current time interval is the txInfoValidRange field of the context.
+    -- This can be described as `txInfoValidRange info`
+
+    -- Pass both of these as arguments to `contains` to make sure the current
+    -- time interval is completely within the deadline interval.
     deadlineReached :: Bool
     deadlineReached = contains (from $ deadline dat) $ txInfoValidRange info
 
