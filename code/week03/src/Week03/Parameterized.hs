@@ -36,47 +36,85 @@ import           Playground.Types     (KnownCurrency (..))
 import           Prelude              (IO, Semigroup (..), Show (..), String)
 import           Text.Printf          (printf)
 
+-- Instead of a fixed datum, we can parameterize. The old name VestingDatum is
+-- no longer appropriate. This type is now renamed VestingParam.
 data VestingParam = VestingParam
     { beneficiary :: PaymentPubKeyHash
     , deadline    :: POSIXTime
     } deriving Show
 
+-- Making the datum into IsData is no longer needed
+-- PlutusTx.unstableMakeIsData ''VestingDatum
+
+-- Necessary for the template Haskell when making the validator below on line 94
 PlutusTx.makeLift ''VestingParam
 
 {-# INLINABLE mkValidator #-}
+
+-- We need to add another parameter. Before we had Datum, Redeemer, Context. Now
+-- it's similar but Datum is replaced by VestingParam which itself needs
+-- parameters.
 mkValidator :: VestingParam -> () -> () -> ScriptContext -> Bool
+
+-- We replace the datum previously named `dat` with `p ()`
 mkValidator p () () ctx = traceIfFalse "beneficiary's signature missing" signedByBeneficiary &&
                           traceIfFalse "deadline not reached" deadlineReached
   where
     info :: TxInfo
     info = scriptContextTxInfo ctx
 
+    -- Replace dat with p
     signedByBeneficiary :: Bool
     signedByBeneficiary = txSignedBy info $ unPaymentPubKeyHash $ beneficiary p
 
+    -- Replace dat with p
     deadlineReached :: Bool
     deadlineReached = contains (from $ deadline p) $ txInfoValidRange info
 
+-- This type must change, too. The datum type is no longer VestingDatum, but is
+-- instead unit ()
 data Vesting
 instance Scripts.ValidatorTypes Vesting where
     type instance DatumType Vesting = ()
     type instance RedeemerType Vesting = ()
 
+-- typedValidator takes an additional parameter now, of VestingParam type
 typedValidator :: VestingParam -> Scripts.TypedValidator Vesting
+
+-- Name the parameters p
 typedValidator p = Scripts.mkTypedValidator @Vesting
+
+    -- You might expect `$$(PlutusTx.compile [|| mkValidator p ||])` to work,
+    -- but the inline pragma requires that everything inside the oxford brackets
+    -- (||) must be known at compile time
+
+    -- Instead, we must use the syntax below with applyCode and liftCode
+    -- It's possible to lift p here because of the makeLift on line 50 above
     ($$(PlutusTx.compile [|| mkValidator ||]) `PlutusTx.applyCode` PlutusTx.liftCode p)
     $$(PlutusTx.compile [|| wrap ||])
   where
+
+    -- To match the Vesting type, datum is no longer VestingDatum, instead ()
     wrap = Scripts.wrapValidator @() @()
 
+-- validator now takes the VestingParam as a param
 validator :: VestingParam -> Validator
+
+-- Short (pointfree) version of
+-- validator p = Scripts.validatorScript $ typedValidator p
 validator = Scripts.validatorScript . typedValidator
 
+-- valHash has the same changes as validator above
 valHash :: VestingParam -> Ledger.ValidatorHash
 valHash = Scripts.validatorHash . typedValidator
 
+-- scrAddress has the same changes as validator and valHash above
 scrAddress :: VestingParam -> Ledger.Address
 scrAddress = scriptAddress . validator
+
+-- The off-chain code below changed, as well, to facilitate the parameterized
+-- datum. It does mostly the same as before, but instead of using constant
+-- beneficiaries and deadlines, those are grabbed via parameters
 
 data GiveParams = GiveParams
     { gpBeneficiary :: !PaymentPubKeyHash
