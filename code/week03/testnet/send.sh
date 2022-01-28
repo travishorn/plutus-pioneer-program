@@ -2,7 +2,7 @@ cardano-cli transaction build \
     --alonzo-era \
     --testnet-magic 1097911063 \
     --change-address $(cat 01.addr) \
-    --tx-in dfc1a522cd34fe723a0e89f68ed43a520fd218e20d8e5705b120d2cedc7f45ad#0 \
+    --tx-in 1e704ad4fa71943d487fe2fe15c6f440567c24f7c9a28b56ff7bd1ecb4e4de9c#0 \
     --tx-out "$(cat 02.addr) 10000000 lovelace" \
     --out-file tx.body
 
