@@ -2,13 +2,13 @@ cardano-cli transaction build \
     --alonzo-era \
     --testnet-magic 1097911063 \
     --change-address $(cat 02.addr) \
-    --tx-in 18cbe6cadecd3f89b60e08e68e5e6c7d72d730aaa1ad21431590f7e6643438ef#1 \
+    --tx-in e10449f6d63c193d9dcdf00be73b35149355cf4f39c0a933e736027e8105a5ca#1 \
     --tx-in-script-file vesting.plutus \
     --tx-in-datum-file unit.json \
     --tx-in-redeemer-file unit.json \
-    --tx-in-collateral 18e93407ea137b6be63039fd3c564d4c5233e7eb7ce4ee845bc7df12c80e4df7#1 \
-    --required-signer-hash c2ff616e11299d9094ce0a7eb5b7284b705147a822f4ffbd471f971a \
-    --invalid-before 48866954 \
+    --tx-in-collateral 9e16d784e23dba40d6bbff113d6e48a60a07ad696c83c0fbd77d7bb47d729a05#1 \
+    --required-signer-hash d4f5fc7c64f0d0a90cf263b04c6af29c629e1d0674b6f83623800f1f \
+    --invalid-before 49044993 \
     --protocol-params-file protocol.json \
     --out-file tx.body
 

@@ -51,9 +51,11 @@ writeUnit = writeJSON "testnet/unit.json" ()
 -- Beneficiary will be wallet 2. We can get its public key hash with
 -- cardano-cli address key-hash --payment-verification-key-file 02.vkey
 -- The deadline can be found using an online POSIX time converter. Make sure
--- the deadline is in milliseconds. Set it to some time in the future.
+-- the deadline is in milliseconds. Set it to some time in the future. If you
+-- want to test out a failed grab and then a successful one, maybe set it to one
+-- hour in the future.
 writeVestingValidator :: IO (Either (FileError ()) ())
 writeVestingValidator = writeValidator "testnet/vesting.plutus" $ validator $ VestingParam
     { beneficiary = Ledger.PaymentPubKeyHash "d4f5fc7c64f0d0a90cf263b04c6af29c629e1d0674b6f83623800f1f"
-    , deadline    = 1643400755000
+    , deadline    = 1643413791000
     }
